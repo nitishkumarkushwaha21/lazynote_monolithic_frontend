@@ -13,19 +13,45 @@ if (-not $repoRoot) {
 
 $accounts = & "$repoRoot/scripts/github-accounts.ps1"
 
-if ($Account -lt 1 -or $Account -gt $accounts.Count) {
+function Get-AccountChoice {
+    param([array]$AccountList, [string]$ActionName)
+
     Write-Host ""
-    Write-Host "Choose GitHub account for git $Action :" -ForegroundColor Cyan
-    for ($i = 0; $i -lt $accounts.Count; $i++) {
-        Write-Host "  $($i + 1)) $($accounts[$i].Label)"
+    Write-Host "Choose GitHub account for git $ActionName :" -ForegroundColor Cyan
+    for ($i = 0; $i -lt $AccountList.Count; $i++) {
+        Write-Host "  $($i + 1)) $($AccountList[$i].Label)"
     }
     Write-Host ""
 
-    do {
-        $choice = Read-Host "Enter choice (1-$($accounts.Count))"
-    } while ($choice -notmatch "^\d+$" -or [int]$choice -lt 1 -or [int]$choice -gt $accounts.Count)
+    $choicePath = Join-Path $env:WINDIR "System32\choice.exe"
+    if (Test-Path $choicePath) {
+        $keys = (1..$AccountList.Count) -join ""
+        & $choicePath /C $keys /N /M "Enter choice (1-$($AccountList.Count))"
+        $code = $LASTEXITCODE
+        if ($code -ge 1 -and $code -le $AccountList.Count) {
+            return $code
+        }
+    }
 
-    $Account = [int]$choice
+    if (-not [Console]::IsInputRedirected) {
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $choice = Read-Host "Enter choice (1-$($AccountList.Count))"
+            if ($choice -match "^\d+$" -and [int]$choice -ge 1 -and [int]$choice -le $AccountList.Count) {
+                return [int]$choice
+            }
+            Write-Host "Invalid choice. Try again." -ForegroundColor Yellow
+        }
+    }
+
+    Write-Error @"
+Could not read account choice.
+Run manually: powershell -File scripts/select-github-account.ps1 -Action $ActionName -Account 1
+"@
+    exit 1
+}
+
+if ($Account -lt 1 -or $Account -gt $accounts.Count) {
+    $Account = Get-AccountChoice -AccountList $accounts -ActionName $Action
 }
 
 $selected = $accounts[$Account - 1]
