@@ -1,0 +1,3 @@
+#!/bin/sh
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(git rev-parse --show-toplevel)/scripts/select-github-account.ps1" -Action commit
+exit $?
