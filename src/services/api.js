@@ -4,7 +4,15 @@ let authTokenGetter = null;
 let authUserIdGetter = null;
 
 const isBrowser = typeof window !== "undefined";
-const envApiBaseUrl = String(import.meta.env.VITE_API_URL || "").trim();
+const normalizeApiBaseUrl = (url) => {
+  const cleanUrl = String(url || "").trim().replace(/\/+$/, "");
+  if (!cleanUrl) {
+    return "";
+  }
+  return cleanUrl.endsWith("/api") ? cleanUrl : `${cleanUrl}/api`;
+};
+
+const envApiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 const devApiBaseUrl =
   envApiBaseUrl ||
   (isBrowser && import.meta.env.DEV
