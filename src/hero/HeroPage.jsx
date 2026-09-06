@@ -15,7 +15,7 @@ import {
   workflowSteps,
   workspaceArchitectureSteps,
 } from "./heroContent";
-import treeImage from "../../../tree.jpg";
+import treeImage from "./pexels-jplenio-3262249.jpg";
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
