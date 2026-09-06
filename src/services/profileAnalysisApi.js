@@ -20,7 +20,7 @@ const profileAnalysisApi = {
   getRevisions: (username) => api.get(`/profile-analysis/revision/${username}`),
 
   /**
-   * Remove a revision problem by its MongoDB _id
+   * Remove a revision problem by its Postgres revision id
    * @param {string} id
    */
   deleteRevision: (id) => api.delete(`/profile-analysis/revision/${id}`),

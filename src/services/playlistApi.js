@@ -2,7 +2,7 @@ import api from "./api";
 
 /**
  * playlistApi — all API calls for the YouTube Playlist feature.
- * Routes through the existing Vite proxy → gateway (port 5001) → playlist service (port 5005).
+ * Hits the monolithic backend at /api/youtube-playlist (Vite proxies /api → :5000).
  */
 
 const playlistApi = {

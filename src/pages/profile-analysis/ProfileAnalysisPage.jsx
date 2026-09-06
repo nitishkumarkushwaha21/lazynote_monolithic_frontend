@@ -200,7 +200,7 @@ const ProfileAnalysisPage = () => {
     }
   };
 
-  // Saves a single problem to the revision list (MongoDB via profile-analysis service)
+  // Saves a single problem to the revision list (PostgreSQL via profile-analysis API)
   const handleAddToRevision = async (problem, topic) => {
     if (!currentUsername) throw new Error("No user analyzed yet.");
     const problemName = problem.problemName || problem.name;
