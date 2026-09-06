@@ -16,6 +16,7 @@ import {
   workspaceArchitectureSteps,
 } from "./heroContent";
 import treeImage from "./pexels-jplenio-3262249.jpg";
+import { triggerRenderWarmup } from "../services/renderWarmup";
 
 const fadeUp = {
   initial: { opacity: 0, y: 18 },
@@ -228,6 +229,10 @@ const WorkspaceArchitectureSection = () => {
 };
 
 const HeroPage = () => {
+  useEffect(() => {
+    triggerRenderWarmup();
+  }, []);
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#06111f] text-white">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(58,130,246,0.14),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.1),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%)]" />
