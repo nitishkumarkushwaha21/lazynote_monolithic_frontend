@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 const CreateRootFolderModal = ({
@@ -8,15 +9,38 @@ const CreateRootFolderModal = ({
   onClose,
   onSubmit,
 }) => {
-  return (
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onMouseDown={onClose}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-96 rounded-[24px] border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
+            onMouseDown={(event) => event.stopPropagation()}
+            className="w-full max-w-96 rounded-[24px] border border-white/16 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(8,12,22,0.98))] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.46)]"
           >
             <h2 className="mb-2 font-mono text-[1.35rem] font-semibold tracking-[-0.03em] text-white">
               New Folder
@@ -58,7 +82,8 @@ const CreateRootFolderModal = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };
 

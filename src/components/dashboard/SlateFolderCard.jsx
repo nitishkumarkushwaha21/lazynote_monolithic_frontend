@@ -87,6 +87,14 @@ const css = `
     --sfc-icon-glow: rgba(148,163,184,0.14);
   }
 
+  .sfc-card.is-empty {
+    opacity: 0.62;
+  }
+
+  .sfc-card.is-empty:hover {
+    opacity: 0.92;
+  }
+
   .sfc-card:hover {
     transform: translateY(-3px);
     border-color: var(--sfc-card-hover-border);
@@ -188,8 +196,10 @@ const css = `
     font-weight: 600;
     line-height: 1.22;
     letter-spacing: -0.045em;
+    overflow: hidden;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -330,11 +340,11 @@ const css = `
 
   .sfc-meta {
     color: var(--sfc-meta);
-    font-size: 10px;
+    font-size: 13px;
     font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
     position: relative;
     padding-bottom: 6px;
   }
@@ -417,6 +427,27 @@ const css = `
   }
 `;
 
+const FolderTitle = ({ name }) => {
+  const parts = String(name || "").split(/(_+)/);
+
+  return parts.map((part, index) => {
+    if (!part) {
+      return null;
+    }
+
+    if (part.startsWith("_")) {
+      return (
+        <React.Fragment key={index}>
+          {part}
+          <wbr />
+        </React.Fragment>
+      );
+    }
+
+    return <React.Fragment key={index}>{part}</React.Fragment>;
+  });
+};
+
 const formatDate = (dateValue) =>
   new Date(dateValue).toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -480,7 +511,7 @@ const FolderThemeTwo = ({
     <>
       <style>{css}</style>
       <div
-        className={`sfc-card${theme === "sky" ? " theme-sky" : ""}${theme === "green" ? " theme-green" : ""}`}
+        className={`sfc-card${folder.files === 0 ? " is-empty" : ""}${theme === "sky" ? " theme-sky" : ""}${theme === "green" ? " theme-green" : ""}`}
         onClick={() => {
           if (!isRenaming && !isConfirmingDelete) {
             onOpen?.(folder);
@@ -490,7 +521,7 @@ const FolderThemeTwo = ({
         {isConfirmingDelete && (
           <div className="sfc-confirm">
             <p className="sfc-confirm-text">
-              Delete <strong>/{folder.name}</strong>?
+              Delete <strong>{folder.name}</strong>?
             </p>
             <div className="sfc-confirm-actions">
               <button
@@ -524,7 +555,9 @@ const FolderThemeTwo = ({
             </div>
 
             <div className="sfc-copy">
-              <h3 className="sfc-title">/{folder.name}</h3>
+              <h3 className="sfc-title" title={folder.name}>
+                <FolderTitle name={folder.name} />
+              </h3>
             </div>
 
             <div className="sfc-menu-wrap" ref={menuRef}>
@@ -577,7 +610,7 @@ const FolderThemeTwo = ({
               {folder.files} {folder.files === 1 ? "problem" : "problems"}
             </div>
             <div className="sfc-date">
-              {formatDate(folder.created || Date.now())}
+              {formatDate(folder.activityAt || folder.created || Date.now())}
             </div>
           </div>
         </div>

@@ -1,15 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser } from "@clerk/react";
-import { ChevronDown, LogOut, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowDownWideNarrow, ChevronDown, LogOut, Plus, Search } from "lucide-react";
+
+const THEME_OPTIONS = [
+  { value: "default", label: "Default theme" },
+  { value: "sky", label: "Soft sky blue" },
+  { value: "green", label: "Grey + white" },
+];
+
+const SORT_OPTIONS = [
+  { value: "recent", label: "Recent" },
+  { value: "name", label: "Name" },
+  { value: "problems", label: "Most problems" },
+];
+
+const formatCount = (count, singular, plural) =>
+  `${count} ${count === 1 ? singular : plural}`;
 
 const DashboardTopBar = ({
   searchValue,
-  filterValue,
+  sortValue,
   themeValue,
-  loginCount,
+  folderCount,
+  problemCount,
+  hasLoadedFileSystem,
   onSearchChange,
-  onFilterChange,
+  onSortChange,
   onThemeChange,
+  onCreateFolder,
 }) => {
   const clerk = useClerk();
   const { user } = useUser();
@@ -60,6 +78,10 @@ const DashboardTopBar = ({
       .join("");
   }, [user]);
 
+  const summary = hasLoadedFileSystem
+    ? `${formatCount(folderCount, "folder", "folders")} · ${formatCount(problemCount, "problem", "problems")}`
+    : "Loading workspace";
+
   const handleSignOut = async () => {
     if (isSigningOut) {
       return;
@@ -74,19 +96,16 @@ const DashboardTopBar = ({
   };
 
   return (
-    <div className="mb-6 flex items-center justify-between gap-4 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <div className="mb-6 flex flex-col gap-4 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] lg:flex-row lg:items-center lg:justify-between">
       <div className="min-w-0">
         <h1 className="font-mono text-[1.18rem] font-semibold tracking-[-0.03em] text-white">
           Home
         </h1>
-        <p className="mt-0.5 text-[12px] text-white/42">
-          Total logins:{" "}
-          <span className="text-sky-200/80">{loginCount ?? "..."}</span>
-        </p>
+        <p className="mt-0.5 text-[12px] text-white/42">{summary}</p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="relative hidden w-72 md:block">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[180px] flex-1 sm:w-72 sm:flex-none">
           <Search
             size={15}
             className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-white/34"
@@ -101,32 +120,36 @@ const DashboardTopBar = ({
         </div>
 
         <div className="relative">
-          <SlidersHorizontal
+          <ArrowDownWideNarrow
             size={14}
             className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-white/34"
           />
           <select
-            value={filterValue}
-            onChange={(event) => onFilterChange(event.target.value)}
+            value={sortValue}
+            onChange={(event) => onSortChange(event.target.value)}
+            aria-label="Sort folders"
             className="h-9 appearance-none rounded-xl border border-white/10 bg-[#0c121c] pr-8 pl-9 text-sm text-white outline-none transition-colors focus:border-blue-400/24"
           >
-            <option value="all">All folders</option>
-            <option value="with-items">With items</option>
-            <option value="empty">Empty</option>
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
+          <ChevronDown
+            size={14}
+            className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-white/40"
+          />
         </div>
 
-        <div className="relative hidden md:block">
-          <select
-            value={themeValue}
-            onChange={(event) => onThemeChange(event.target.value)}
-            className="h-9 appearance-none rounded-xl border border-white/10 bg-[#0c121c] px-3 text-sm text-white outline-none transition-colors focus:border-blue-400/24"
-          >
-            <option value="default">Defalut theme</option>
-            <option value="sky">Soft sky blue</option>
-            <option value="green">Grey + white</option>
-          </select>
-        </div>
+        <button
+          type="button"
+          onClick={onCreateFolder}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-sky-300/30 bg-sky-400/15 px-3 text-sm font-medium text-sky-50 transition hover:border-sky-300/45 hover:bg-sky-400/25"
+        >
+          <Plus size={15} />
+          New folder
+        </button>
 
         <div ref={profileMenuRef} className="relative">
           <button
@@ -150,6 +173,30 @@ const DashboardTopBar = ({
                 <p className="truncate text-xs text-white/50">
                   {user?.primaryEmailAddress?.emailAddress || ""}
                 </p>
+              </div>
+
+              <div className="mt-2 px-1">
+                <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/35">
+                  Card theme
+                </p>
+                {THEME_OPTIONS.map((option) => {
+                  const isActive = themeValue === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => onThemeChange(option.value)}
+                      className={`mt-1 flex w-full items-center rounded-xl px-3 py-2 text-left text-sm transition ${
+                        isActive
+                          ? "bg-white/[0.08] text-white"
+                          : "text-white/70 hover:bg-white/[0.04] hover:text-white"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
 
               <button
