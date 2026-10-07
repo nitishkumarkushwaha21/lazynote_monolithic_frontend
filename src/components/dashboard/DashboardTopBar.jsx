@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser } from "@clerk/react";
 import { ArrowDownWideNarrow, ChevronDown, LogOut, Plus, Search } from "lucide-react";
+import PomodoroTimer from "./PomodoroTimer";
 
 const THEME_OPTIONS = [
   { value: "default", label: "Default theme" },
@@ -118,6 +119,8 @@ const DashboardTopBar = ({
             className="h-9 w-full rounded-xl border border-white/10 bg-[#0c121c] pr-3 pl-9 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-blue-400/24"
           />
         </div>
+
+        <PomodoroTimer />
 
         <div className="relative">
           <ArrowDownWideNarrow

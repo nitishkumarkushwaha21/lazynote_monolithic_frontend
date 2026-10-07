@@ -87,6 +87,34 @@ const css = `
     --sfc-icon-glow: rgba(148,163,184,0.14);
   }
 
+  .sfc-card.accent-violet {
+    --sfc-border: rgba(167,139,250,0.34);
+    --sfc-card-hover-border: rgba(167,139,250,0.48);
+    --sfc-icon-stroke: rgba(167,139,250,0.92);
+    --sfc-icon-glow: rgba(167,139,250,0.22);
+  }
+
+  .sfc-card.accent-emerald {
+    --sfc-border: rgba(52,211,153,0.34);
+    --sfc-card-hover-border: rgba(52,211,153,0.48);
+    --sfc-icon-stroke: rgba(52,211,153,0.92);
+    --sfc-icon-glow: rgba(52,211,153,0.22);
+  }
+
+  .sfc-card.accent-amber {
+    --sfc-border: rgba(251,191,36,0.36);
+    --sfc-card-hover-border: rgba(251,191,36,0.52);
+    --sfc-icon-stroke: rgba(251,191,36,0.94);
+    --sfc-icon-glow: rgba(251,191,36,0.22);
+  }
+
+  .sfc-card.accent-rose {
+    --sfc-border: rgba(251,113,133,0.36);
+    --sfc-card-hover-border: rgba(251,113,133,0.52);
+    --sfc-icon-stroke: rgba(251,113,133,0.92);
+    --sfc-icon-glow: rgba(251,113,133,0.22);
+  }
+
   .sfc-card.is-empty {
     opacity: 0.62;
   }
@@ -287,6 +315,26 @@ const css = `
     background: rgba(255,255,255,0.08);
   }
 
+  .sfc-colors {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px 4px;
+  }
+
+  .sfc-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.28);
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .sfc-swatch.is-selected {
+    box-shadow: 0 0 0 2px rgba(15,23,42,0.98), 0 0 0 3px rgba(255,255,255,0.88);
+  }
+
   .sfc-rename {
     position: relative;
     z-index: 3;
@@ -455,8 +503,18 @@ const formatDate = (dateValue) =>
     year: "numeric",
   });
 
+const FOLDER_ACCENTS = [
+  { id: "current", label: "Current", swatch: "#60a5fa" },
+  { id: "violet", label: "Violet", swatch: "#a78bfa" },
+  { id: "emerald", label: "Emerald", swatch: "#34d399" },
+  { id: "amber", label: "Amber", swatch: "#fbbf24" },
+  { id: "rose", label: "Rose", swatch: "#fb7185" },
+];
+
 const FolderThemeTwo = ({
+  accent = "current",
   folder,
+  onColorChange,
   onDelete,
   onOpen,
   onRename,
@@ -511,7 +569,7 @@ const FolderThemeTwo = ({
     <>
       <style>{css}</style>
       <div
-        className={`sfc-card${folder.files === 0 ? " is-empty" : ""}${theme === "sky" ? " theme-sky" : ""}${theme === "green" ? " theme-green" : ""}`}
+        className={`sfc-card${folder.files === 0 ? " is-empty" : ""}${theme === "sky" ? " theme-sky" : ""}${theme === "green" ? " theme-green" : ""}${["violet", "emerald", "amber", "rose"].includes(accent) ? ` accent-${accent}` : ""}`}
         onClick={() => {
           if (!isRenaming && !isConfirmingDelete) {
             onOpen?.(folder);
@@ -577,6 +635,24 @@ const FolderThemeTwo = ({
 
               {isMenuOpen && (
                 <div className="sfc-dropdown">
+                  <div className="sfc-colors" role="group" aria-label="Folder color">
+                    {FOLDER_ACCENTS.map((color) => (
+                      <button
+                        key={color.id}
+                        type="button"
+                        className={`sfc-swatch${accent === color.id ? " is-selected" : ""}`}
+                        style={{ background: color.swatch }}
+                        title={color.label}
+                        aria-label={color.label}
+                        aria-pressed={accent === color.id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onColorChange?.(folder.id, color.id);
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="sfc-sep" />
                   <button
                     type="button"
                     className="sfc-dd-item"

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useFileStore from "../../store/useFileStore";
+import { findNodePath } from "../../utils/fileTree";
 import SidebarTreeItem from "./SidebarTreeItem";
 
 const COLLAPSED_WIDTH = 68;
@@ -26,6 +27,8 @@ const AppSidebar = () => {
     expandedFolders,
     fileSystem,
     isLoading,
+    noteRecentFolder,
+    recentFolderIds,
     setActiveFile,
     toggleFolder,
   } = useFileStore();
@@ -93,8 +96,49 @@ const AppSidebar = () => {
     [],
   );
 
-  const rootItems = fileSystem.filter((item) => item.parentId == null);
-  const collapsedRootItems = rootItems.slice(0, 8);
+  const currentNodeId = useMemo(() => {
+    const folderMatch = location.pathname.match(/^\/folder\/([^/]+)/);
+    if (folderMatch) {
+      return folderMatch[1];
+    }
+
+    const problemMatch = location.pathname.match(/^\/problem\/([^/]+)/);
+    return problemMatch ? problemMatch[1] : null;
+  }, [location.pathname]);
+
+  const currentRootId = useMemo(() => {
+    if (!currentNodeId) {
+      return null;
+    }
+
+    const path = findNodePath(fileSystem, currentNodeId);
+    return path?.[0]?.type === "folder" ? String(path[0].id) : null;
+  }, [currentNodeId, fileSystem]);
+
+  const orderedRoots = useMemo(() => {
+    const roots = fileSystem.filter((item) => item.parentId == null);
+    const rank = (item) => {
+      const itemId = String(item.id);
+      if (currentRootId && itemId === currentRootId) {
+        return -1;
+      }
+
+      const recentIndex = recentFolderIds.indexOf(itemId);
+      return recentIndex === -1 ? Number.MAX_SAFE_INTEGER : recentIndex;
+    };
+
+    return [...roots].sort((left, right) => rank(left) - rank(right));
+  }, [currentRootId, fileSystem, recentFolderIds]);
+
+  const collapsedRootItems = orderedRoots.slice(0, 8);
+
+  useEffect(() => {
+    if (!currentNodeId || fileSystem.length === 0) {
+      return;
+    }
+
+    noteRecentFolder(currentNodeId);
+  }, [currentNodeId, fileSystem, noteRecentFolder]);
 
   const createRootItem = async (type) => {
     const label = type === "file" ? "file" : "folder";
@@ -272,7 +316,7 @@ const AppSidebar = () => {
                 </div>
               )}
               <div className="space-y-1.5">
-                {fileSystem.map((item) => (
+                {orderedRoots.map((item) => (
                   <SidebarTreeItem key={item.id} item={item} />
                 ))}
               </div>

@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { clsx } from "clsx";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+const complexityHint = (solution) =>
+  [solution.time, solution.space].filter(Boolean).join(" · ");
+
 const ProblemSolutionTabs = ({
   activeTab,
   solutions,
@@ -16,7 +19,10 @@ const ProblemSolutionTabs = ({
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/6 bg-[#111111] px-4 py-2">
       <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto overflow-y-visible">
-        {solutions.map((tab, index) => (
+        {solutions.map((tab) => {
+          const hint = complexityHint(tab);
+
+          return (
           <div
             key={tab.id}
             className={clsx(
@@ -32,7 +38,7 @@ const ProblemSolutionTabs = ({
                   onChange(tab.id);
                 }
               }}
-              className="max-w-40 cursor-pointer truncate"
+              className="flex max-w-56 cursor-pointer items-center gap-1.5"
             >
               {editingId === tab.id ? (
                 <input
@@ -56,7 +62,14 @@ const ProblemSolutionTabs = ({
                   className="w-28 border-b border-white/20 bg-transparent text-sm text-white outline-none focus:border-blue-300/60"
                 />
               ) : (
-                tab.label
+                <>
+                  <span className="max-w-40 truncate">{tab.label}</span>
+                  {hint ? (
+                    <span className="font-mono text-[10px] text-white/45">
+                      {hint}
+                    </span>
+                  ) : null}
+                </>
               )}
             </div>
 
@@ -83,7 +96,8 @@ const ProblemSolutionTabs = ({
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <button

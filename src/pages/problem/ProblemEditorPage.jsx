@@ -67,7 +67,6 @@ const ProblemEditorPage = () => {
     getProblemWithCache,
     peekProblemCache,
     prefetchAround,
-    updateFileAnalysis,
     updateFileContent,
     updateFileNotes,
     updateSolutionEntries,
@@ -254,37 +253,16 @@ const ProblemEditorPage = () => {
     );
   }
 
-  const handleTimeChange = (event) => {
-    setProblemRecord((current) => ({
-      ...(current || {}),
-      analysis: {
-        time: event.target.value,
-        space: problemView?.analysis?.space || "",
-        explanation: problemView?.analysis?.explanation || "",
-      },
-    }));
-    updateFileAnalysis(activeFileId, {
-      time: event.target.value,
-      space: problemView?.analysis?.space || "",
-      explanation: problemView?.analysis?.explanation || "",
-    });
-  };
-
-  const handleSpaceChange = (event) => {
-    setProblemRecord((current) => ({
-      ...(current || {}),
-      analysis: {
-        time: problemView?.analysis?.time || "",
-        space: event.target.value,
-        explanation: problemView?.analysis?.explanation || "",
-      },
-    }));
-    updateFileAnalysis(activeFileId, {
-      time: problemView?.analysis?.time || "",
-      space: event.target.value,
-      explanation: problemView?.analysis?.explanation || "",
-    });
-  };
+  const activeSolution =
+    solutionEntries.find((entry) => entry.id === activeTab) || null;
+  const timeValue =
+    activeSolution && activeSolution.time !== undefined
+      ? activeSolution.time
+      : problemView?.analysis?.time || "";
+  const spaceValue =
+    activeSolution && activeSolution.space !== undefined
+      ? activeSolution.space
+      : problemView?.analysis?.space || "";
 
   const handleLinkBlur = async (event) => {
     const newLink = event.target.value.trim();
@@ -379,6 +357,21 @@ const ProblemEditorPage = () => {
     await updateSolutionEntries(activeFile.id, nextEntries);
   };
 
+  const updateActiveComplexity = (field, value) => {
+    const nextEntries = solutionEntries.map((entry) =>
+      entry.id === activeTab ? { ...entry, [field]: value } : entry,
+    );
+    persistSolutionEntries(nextEntries);
+  };
+
+  const handleTimeChange = (event) => {
+    updateActiveComplexity("time", event.target.value);
+  };
+
+  const handleSpaceChange = (event) => {
+    updateActiveComplexity("space", event.target.value);
+  };
+
   const handleAddSolution = async () => {
     const nextEntries = [
       ...solutionEntries,
@@ -386,6 +379,8 @@ const ProblemEditorPage = () => {
         id: `solution-${Date.now()}`,
         label: `Solution ${solutionEntries.length + 1}`,
         code: "",
+        time: "",
+        space: "",
       },
     ];
     await persistSolutionEntries(nextEntries);
@@ -514,8 +509,8 @@ const ProblemEditorPage = () => {
             </div>
 
             <ProblemComplexityFields
-              timeValue={problemView?.analysis?.time}
-              spaceValue={problemView?.analysis?.space}
+              timeValue={timeValue}
+              spaceValue={spaceValue}
               onTimeChange={handleTimeChange}
               onSpaceChange={handleSpaceChange}
               onPrev={handlePrevProblem}

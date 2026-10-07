@@ -1,10 +1,41 @@
 import { create } from "zustand";
 import { fileService } from "../services/api";
 import {
+  findNodePath,
   findTreeNode,
   removeTreeNode,
   updateTreeNode,
 } from "../utils/fileTree";
+
+const RECENT_FOLDERS_KEY = "algonote-recent-folders";
+const RECENT_FOLDER_LIMIT = 20;
+
+const readRecentFolderIds = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(RECENT_FOLDERS_KEY));
+    return Array.isArray(parsed)
+      ? parsed.map((id) => String(id)).slice(0, RECENT_FOLDER_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeRecentFolderIds = (ids) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(RECENT_FOLDERS_KEY, JSON.stringify(ids));
+  } catch {
+    // Ignore storage failures; the in-memory order still applies this session.
+  }
+};
 
 const FILE_SYSTEM_RETRY_DELAYS_MS = [500, 1200, 2500, 4000, 6000, 8000, 10000];
 const PROBLEM_CACHE_MAX_ENTRIES = 40;
@@ -21,9 +52,20 @@ const defaultSolutionEntries = () => [
   },
 ];
 
+const withSolutionComplexity = (entry) => {
+  const next = { ...entry };
+  if (entry.time !== undefined) {
+    next.time = entry.time;
+  }
+  if (entry.space !== undefined) {
+    next.space = entry.space;
+  }
+  return next;
+};
+
 const normalizeSolutionEntries = (item = {}) => {
   if (Array.isArray(item.solutionEntries) && item.solutionEntries.length > 0) {
-    return item.solutionEntries;
+    return item.solutionEntries.map(withSolutionComplexity);
   }
 
   const legacyEntries = [
@@ -101,16 +143,19 @@ const useFileStore = create((set, get) => ({
   fileSystem: [], // Initially empty, loaded from API
   activeFileId: null,
   expandedFolders: [],
+  recentFolderIds: readRecentFolderIds(),
   isLoading: false,
   error: null,
   hasLoadedFileSystem: false,
 
   resetForUser: () => {
     clearProblemCache();
+    writeRecentFolderIds([]);
     set({
       fileSystem: [],
       activeFileId: null,
       expandedFolders: [],
+      recentFolderIds: [],
       isLoading: false,
       error: null,
       hasLoadedFileSystem: false,
@@ -315,6 +360,46 @@ const useFileStore = create((set, get) => ({
     const key = normalizeFileId(fileId);
     problemCache.delete(key);
     problemInFlightRequests.delete(key);
+  },
+
+  noteRecentFolder: (nodeId) => {
+    if (!nodeId) {
+      return;
+    }
+
+    const path = findNodePath(get().fileSystem, nodeId);
+    const root = path?.[0];
+    if (!root || root.type !== "folder") {
+      return;
+    }
+
+    const ancestorIds = path
+      .slice(0, -1)
+      .filter((node) => node.type === "folder")
+      .map((node) => node.id);
+    const rootId = String(root.id);
+
+    set((state) => {
+      const alreadyFirst = state.recentFolderIds[0] === rootId;
+      const missingAncestors = ancestorIds.filter(
+        (id) => !state.expandedFolders.some((openId) => String(openId) === String(id)),
+      );
+
+      if (alreadyFirst && missingAncestors.length === 0) {
+        return state;
+      }
+
+      const recentFolderIds = [
+        rootId,
+        ...state.recentFolderIds.filter((id) => id !== rootId),
+      ].slice(0, RECENT_FOLDER_LIMIT);
+      writeRecentFolderIds(recentFolderIds);
+
+      return {
+        recentFolderIds,
+        expandedFolders: [...state.expandedFolders, ...missingAncestors],
+      };
+    });
   },
 
   toggleFolder: (folderId) =>

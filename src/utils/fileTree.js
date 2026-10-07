@@ -1,3 +1,21 @@
+export function findNodePath(nodes, targetId, trail = []) {
+  for (const node of nodes) {
+    const nextTrail = [...trail, node];
+    if (String(node.id) === String(targetId)) {
+      return nextTrail;
+    }
+
+    if (node.children?.length) {
+      const found = findNodePath(node.children, targetId, nextTrail);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return null;
+}
+
 export function findTreeNode(nodes, targetId) {
   for (const node of nodes) {
     if (String(node.id) === String(targetId)) {

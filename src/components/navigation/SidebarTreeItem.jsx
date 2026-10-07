@@ -20,6 +20,7 @@ const SidebarTreeItem = ({ item, depth = 0 }) => {
     activeFileId,
     deleteItem,
     expandedFolders,
+    noteRecentFolder,
     renameItem,
     setActiveFile,
     toggleFolder,
@@ -49,11 +50,13 @@ const SidebarTreeItem = ({ item, depth = 0 }) => {
     event.stopPropagation();
 
     if (item.type === "folder") {
+      noteRecentFolder(item.id);
       toggleFolder(item.id);
       navigate(`/folder/${item.id}`);
       return;
     }
 
+    noteRecentFolder(item.id);
     setActiveFile(item.id);
     navigate(`/problem/${item.id}`);
   };

@@ -7,6 +7,24 @@ import { DashboardSkeleton } from "../../components/skeletons/ContentSkeletons";
 import useFileStore from "../../store/useFileStore";
 
 const FOLDER_THEME_STORAGE_KEY = "algonote-folder-card-theme";
+const FOLDER_COLOR_STORAGE_KEY = "algonote-folder-colors";
+
+const readFolderColors = () => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(FOLDER_COLOR_STORAGE_KEY) || "{}",
+    );
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
+  }
+};
 
 const countProblems = (node) =>
   (node.children || []).reduce((total, child) => {
@@ -42,6 +60,7 @@ const DashboardPage = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [sortValue, setSortValue] = useState("recent");
+  const [folderColors, setFolderColors] = useState(readFolderColors);
   const [folderTheme, setFolderTheme] = useState(() => {
     if (typeof window === "undefined") {
       return "default";
@@ -89,6 +108,22 @@ const DashboardPage = () => {
       window.localStorage.setItem(FOLDER_THEME_STORAGE_KEY, folderTheme);
     }
   }, [folderTheme]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        FOLDER_COLOR_STORAGE_KEY,
+        JSON.stringify(folderColors),
+      );
+    }
+  }, [folderColors]);
+
+  const handleFolderColor = (folderId, colorId) => {
+    setFolderColors((current) => ({
+      ...current,
+      [folderId]: colorId,
+    }));
+  };
 
   const handleCreateFolder = async (event) => {
     event.preventDefault();
@@ -167,7 +202,9 @@ const DashboardPage = () => {
                 created: folder.createdAt || Date.now(),
                 activityAt: latestActivity(folder) || folder.createdAt || Date.now(),
               }}
+              accent={folderColors[folder.id] || "current"}
               theme={folderTheme}
+              onColorChange={handleFolderColor}
               onOpen={() => navigate(`/folder/${folder.id}`)}
               onRename={(_folderId, nextName) => handleRenameFolder(folder, nextName)}
               onDelete={() => handleDeleteFolder(folder)}
